@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#718F78" />
+  <title>Dayleaf</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3C8 6 6 9 6 13a6 6 0 0 0 12 0c0-4-2-7-6-10z"/>
+            <path d="M12 8v9"/>
+          </svg>
+        </div>
+        <span class="brand-name">Dayleaf</span>
+        <button class="mobile-menu-btn" id="mobile-menu-btn" type="button" aria-label="Menu">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+      </div>
+
+      <nav class="nav">
+        <button class="nav-item active" data-view="planner" type="button">
+          <span class="nav-ico">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="17" rx="3"/>
+              <path d="M8 2v4M16 2v4M3 10h18"/>
+            </svg>
+          </span>
+          <span>Planner</span>
+        </button>
+        <button class="nav-item" data-view="habits" type="button">
+          <span class="nav-ico">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 6L9 17l-5-5"/>
+            </svg>
+          </span>
+          <span>Habit Tracker</span>
+        </button>
+        <button class="nav-item" data-view="profile" type="button">
+          <span class="nav-ico">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="8" r="4"/>
+              <path d="M4 21v-1a8 8 0 0 1 16 0v1"/>
+            </svg>
+          </span>
+          <span>Profile</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="today-pill">
+          <span class="dot"></span>
+          <span id="sidebar-today"></span>
+        </div>
+      </div>
+    </aside>
+
+    <div class="mobile-backdrop" id="mobile-backdrop"></div>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="topbar-date" id="topbar-date"></div>
+        <div class="topbar-actions">
+          <button class="btn btn-ghost" id="prev-day" type="button" title="Previous day">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <button class="btn btn-ghost" id="today-btn" type="button">Today</button>
+          <button class="btn btn-ghost" id="next-day" type="button" title="Next day">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+          </button>
+          <button class="btn btn-ghost theme-toggle" id="theme-toggle" type="button" title="Toggle theme" aria-label="Toggle theme">
+            <svg class="icon-moon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>
+            </svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="4"/>
+              <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- PLANNER -->
+      <section id="view-planner" class="view">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Plan your week.</h1>
+            <p class="page-subtitle">A little structure for a more intentional day.</p>
+          </div>
+          <button class="btn btn-primary" id="open-task-modal" type="button">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            Add Task
+          </button>
+        </div>
+
+        <div class="cards-grid cards-2">
+          <div class="card summary-card">
+            <div class="card-head"><span class="card-label">Tasks Completed</span></div>
+            <div class="summary-numbers">
+              <span class="big-num" id="sum-tasks-done">0</span>
+              <span class="muted-num" id="sum-tasks-total">/ 0</span>
+            </div>
+            <div class="progress"><div class="progress-fill" id="task-progress" style="width:0%"></div></div>
+            <div class="card-foot"><span id="task-percent">0% complete</span></div>
+          </div>
+
+          <div class="card summary-card">
+            <div class="card-head"><span class="card-label">Habits Today</span></div>
+            <div class="summary-numbers">
+              <span class="big-num" id="sum-habits-done">0</span>
+              <span class="muted-num" id="sum-habits-total">/ 0</span>
+            </div>
+            <div class="habit-dots" id="habit-dots"></div>
+            <div class="card-foot"><span id="habit-percent">0% complete</span></div>
+          </div>
+        </div>
+
+        <div class="card week-card">
+          <div class="card-head week-head">
+            <div>
+              <h2 class="card-title">Weekly Planner</h2>
+              <p class="card-sub" id="week-range"></p>
+            </div>
+            <div class="week-nav">
+              <button class="btn btn-ghost" id="prev-week" type="button" title="Previous week">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+              <button class="btn btn-ghost" id="this-week" type="button">This week</button>
+              <button class="btn btn-ghost" id="next-week" type="button" title="Next week">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="week-grid" id="week-grid"></div>
+        </div>
+
+        <div class="split-grid">
+          <div class="card daily-card">
+            <div class="card-head">
+              <div>
+                <h2 class="card-title">Daily Planner</h2>
+                <p class="card-sub" id="daily-subtitle"></p>
+              </div>
+            </div>
+            <div class="task-list" id="task-list"></div>
+          </div>
+
+          <div class="card notes-card">
+            <div class="card-head">
+              <h2 class="card-title">Daily Notes</h2>
+              <span id="note-status" class="muted small">Saved</span>
+            </div>
+            <textarea id="notes-input" class="notes-input" placeholder="Reflections, ideas, small wins…"></textarea>
+          </div>
+        </div>
+      </section>
+
+      <!-- HABITS -->
+      <section id="view-habits" class="view hidden">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Habit Tracker</h1>
+            <p class="page-subtitle">Small consistent actions, compounding over time.</p>
+          </div>
+          <button class="btn btn-primary" id="open-habit-modal" type="button">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            Add Habit
+          </button>
+        </div>
+
+        <div class="cards-grid">
+          <div class="card summary-card">
+            <div class="card-head"><span class="card-label">Total Habits</span></div>
+            <div class="summary-numbers"><span class="big-num" id="hb-total">0</span></div>
+          </div>
+          <div class="card summary-card">
+            <div class="card-head"><span class="card-label">Completed Today</span></div>
+            <div class="summary-numbers"><span class="big-num" id="hb-done">0</span></div>
+          </div>
+          <div class="card summary-card">
+            <div class="card-head"><span class="card-label">Completion</span></div>
+            <div class="summary-numbers"><span class="big-num" id="hb-percent">0%</span></div>
+            <div class="progress"><div class="progress-fill" id="hb-progress" style="width:0%"></div></div>
+          </div>
+        </div>
+
+        <div class="split-grid">
+          <div class="card">
+            <div class="card-head"><h2 class="card-title">Today's Habits</h2></div>
+            <div class="habit-list" id="habit-list"></div>
+          </div>
+
+          <div class="card habit-matrix-card">
+            <div class="card-head">
+              <h2 class="card-title">Weekly Matrix</h2>
+              <p class="card-sub">Tick any day, past or present.</p>
+            </div>
+            <div class="matrix-wrap">
+              <table class="matrix" id="habit-matrix">
+                <thead></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="card chart-card">
+          <div class="card-head">
+            <div>
+              <h2 class="card-title">Weekly Progress</h2>
+              <p class="card-sub">Habits completed per day</p>
+            </div>
+            <div class="chart-type-selector" id="chart-type-selector">
+              <button type="button" class="chart-type-btn active" data-chart="bar">Bar</button>
+              <button type="button" class="chart-type-btn" data-chart="line">Line</button>
+              <button type="button" class="chart-type-btn" data-chart="area">Area</button>
+              <button type="button" class="chart-type-btn" data-chart="dots">Dots</button>
+            </div>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="habit-chart"></canvas>
+          </div>
+        </div>
+
+        <div class="card month-card">
+          <div class="card-head week-head">
+            <div>
+              <h2 class="card-title">Monthly Matrix</h2>
+              <p class="card-sub" id="month-label"></p>
+            </div>
+            <div class="week-nav">
+              <button class="btn btn-ghost" id="prev-month" type="button" title="Previous month">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+              <button class="btn btn-ghost" id="this-month" type="button">This month</button>
+              <button class="btn btn-ghost" id="next-month" type="button" title="Next month">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="matrix-wrap">
+            <table class="matrix matrix-month" id="habit-month-matrix">
+              <thead></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card heatmap-card">
+          <div class="card-head">
+            <div>
+              <h2 class="card-title">Year Heatmap</h2>
+              <p class="card-sub">Last 12 months of completions</p>
+            </div>
+            <div class="heatmap-habit-select">
+              <select id="heatmap-habit-select" aria-label="Select habit"></select>
+            </div>
+          </div>
+          <div class="heatmap-legend">
+            <span class="muted small">Less</span>
+            <span class="heatmap-legend-cell level-0"></span>
+            <span class="heatmap-legend-cell level-1"></span>
+            <span class="heatmap-legend-cell level-2"></span>
+            <span class="heatmap-legend-cell level-3"></span>
+            <span class="heatmap-legend-cell level-4"></span>
+            <span class="muted small">More</span>
+          </div>
+          <div class="heatmap-wrap">
+            <div class="heatmap-months" id="heatmap-months"></div>
+            <div class="heatmap-body">
+              <div class="heatmap-weekdays">
+                <span>Mon</span><span></span><span>Wed</span><span></span><span>Fri</span><span></span><span>Sun</span>
+              </div>
+              <div class="heatmap-grid" id="heatmap-grid"></div>
+            </div>
+          </div>
+          <div class="heatmap-stats" id="heatmap-stats"></div>
+        </div>
+      </section>
+
+      <!-- PROFILE -->
+      <section id="view-profile" class="view hidden">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Profile</h1>
+            <p class="page-subtitle">Your Dayleaf identity and personal report.</p>
+          </div>
+          <button class="btn btn-primary" id="open-profile-modal" type="button">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
+            </svg>
+            Edit Profile
+          </button>
+        </div>
+
+        <div class="card profile-card">
+          <div class="profile-header">
+            <div class="avatar-wrap" id="profile-avatar-wrap">
+              <span class="avatar-fallback" id="profile-initial">?</span>
+              <img id="profile-avatar" class="hidden" alt="Avatar" />
+            </div>
+            <div class="profile-info">
+              <h2 id="profile-name" class="profile-name">No profile yet</h2>
+              <p id="profile-bio" class="profile-bio muted">Click "Edit Profile" to add your name, photo and bio.</p>
+              <p id="profile-email" class="profile-email muted small hidden"></p>
+            </div>
+          </div>
+
+          <div class="profile-stats">
+            <div class="stat">
+              <div class="stat-num" id="profile-stat-tasks">0</div>
+              <div class="stat-label">Tasks done</div>
+            </div>
+            <div class="stat">
+              <div class="stat-num" id="profile-stat-habits">0</div>
+              <div class="stat-label">Active habits</div>
+            </div>
+            <div class="stat">
+              <div class="stat-num" id="profile-stat-streak">0</div>
+              <div class="stat-label">Best streak</div>
+            </div>
+            <div class="stat">
+              <div class="stat-num" id="profile-stat-days">0</div>
+              <div class="stat-label">Days tracked</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card report-card hidden" id="report-card">
+          <div class="card-head">
+            <div>
+              <h2 class="card-title">Personal Report</h2>
+              <p class="card-sub">A beautiful summary of all your activity.</p>
+            </div>
+          </div>
+          <div class="report-controls">
+            <label for="report-end-date">Activity up to:</label>
+            <input type="date" id="report-end-date" />
+            <button class="btn btn-ghost" id="preview-report-btn" type="button" title="Preview in a new tab">
+              Preview
+            </button>
+            <button class="btn btn-primary" id="generate-report-btn" type="button">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <path d="M14 2v6h6M8 13h8M8 17h6"/>
+              </svg>
+              Download Report
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- TASK MODAL -->
+  <div class="modal-backdrop hidden" id="task-modal">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modal-head">
+        <h3 id="task-modal-title">Add Task</h3>
+        <button class="icon-btn" id="close-task-modal" type="button" aria-label="Close">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="task-form" class="form" novalidate>
+        <input type="hidden" id="task-id" />
+        <div class="form-row">
+          <label for="task-title">Title</label>
+          <input type="text" id="task-title" maxlength="200" required placeholder="What needs doing?" />
+        </div>
+        <div class="form-grid">
+          <div class="form-row">
+            <label for="task-date">Date</label>
+            <input type="date" id="task-date" required />
+          </div>
+          <div class="form-row">
+            <label for="task-time">Time (optional)</label>
+            <input type="time" id="task-time" />
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-row">
+            <label for="task-category">Category</label>
+            <input type="text" id="task-category" list="category-list" maxlength="40" placeholder="Personal, Study, Work…" />
+            <datalist id="category-list">
+              <option value="Personal"></option>
+              <option value="Study"></option>
+              <option value="Work"></option>
+              <option value="Health"></option>
+              <option value="Other"></option>
+            </datalist>
+          </div>
+          <div class="form-row">
+            <label for="task-priority">Priority</label>
+            <select id="task-priority">
+              <option value="low">Low</option>
+              <option value="medium" selected>Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-error hidden" id="task-error"></div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" id="cancel-task">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="save-task-btn">Save Task</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- HABIT MODAL -->
+  <div class="modal-backdrop hidden" id="habit-modal">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modal-head">
+        <h3 id="habit-modal-title">Add Habit</h3>
+        <button class="icon-btn" id="close-habit-modal" type="button" aria-label="Close">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="habit-form" class="form" novalidate>
+        <div class="form-row">
+          <label for="habit-title">Habit name</label>
+          <input type="text" id="habit-title" maxlength="60" required placeholder="e.g. Read 20 pages" />
+        </div>
+        <div class="form-row">
+          <label>Color</label>
+          <div class="color-swatches" id="color-swatches"></div>
+        </div>
+        <div class="form-error hidden" id="habit-error"></div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" id="cancel-habit">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="save-habit-btn">Save Habit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- PROFILE MODAL -->
+  <div class="modal-backdrop hidden" id="profile-modal">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modal-head">
+        <h3>Edit Profile</h3>
+        <button class="icon-btn" id="close-profile-modal" type="button" aria-label="Close">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <form id="profile-form" class="form" novalidate>
+        <div class="form-row">
+          <label>Avatar</label>
+          <div class="avatar-upload">
+            <div class="avatar-preview" id="avatar-preview">
+              <span class="avatar-fallback" id="avatar-preview-fallback">?</span>
+              <img id="avatar-preview-img" class="hidden" alt="" />
+            </div>
+            <div class="avatar-upload-info">
+              <label for="avatar-input" class="btn btn-ghost">Choose image</label>
+              <input type="file" id="avatar-input" accept="image/*" class="hidden" />
+              <button type="button" class="btn btn-ghost hidden" id="remove-avatar-btn">Remove</button>
+              <p class="muted small">Square image works best. Max ~350KB.</p>
+            </div>
+          </div>
+        </div>
+        <div class="form-row">
+          <label for="profile-name-input">Name</label>
+          <input type="text" id="profile-name-input" maxlength="60" required placeholder="Your name" />
+        </div>
+        <div class="form-row">
+          <label for="profile-email-input">Email (optional)</label>
+          <input type="email" id="profile-email-input" maxlength="120" placeholder="you@example.com" />
+        </div>
+        <div class="form-row">
+          <label for="profile-bio-input">Bio (optional)</label>
+          <textarea id="profile-bio-input" maxlength="500" rows="3" placeholder="A short line about you…"></textarea>
+        </div>
+        <div class="form-error hidden" id="profile-error"></div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" id="cancel-profile">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="save-profile-btn">Save Profile</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+  <script src="/js/app.js"></script>
+  <script src="/js/profile.js"></script>
+</body>
+</html>
