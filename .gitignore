@@ -1,0 +1,83 @@
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ---------- Virtual environments ----------
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# ---------- User data (DO NOT COMMIT) ----------
+planner.db
+planner.db-journal
+planner.db-wal
+planner.db-shm
+*.sqlite
+*.sqlite3
+backups/
+wheels/
+
+# ---------- Editors / IDEs ----------
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# ---------- OS ----------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ---------- Logs ----------
+*.log
+logs/
+
+# ---------- Env & secrets ----------
+.env
+.env.*
+*.pem
+*.key
+
+# ---------- Build artifacts ----------
+dist/
+build/
+*.exe
+*.msi
+*.app
+
+# ---------- PyInstaller ----------
+*.spec
