@@ -595,3 +595,11 @@ input, select, textarea { font-family: inherit; }
   .report-controls { flex-direction: column; align-items: stretch; }
   .report-controls input[type="date"] { width: 100%; }
 }
+
+a.nav-item {
+  text-decoration: none;
+  color: var(--text);
+}
+a.nav-item:visited {
+  color: var(--text);
+}

@@ -74,8 +74,24 @@ def init_db():
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL
         );
+        CREATE TABLE IF NOT EXISTS weekly_plans (
+            week_start TEXT PRIMARY KEY,
+            content TEXT NOT NULL DEFAULT '',
+            updated_at TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS pomodoro_sessions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_date TEXT NOT NULL,
+            task_id INTEGER,
+            duration_sec INTEGER NOT NULL,
+            started_at TEXT NOT NULL,
+            ended_at TEXT,
+            completed INTEGER NOT NULL DEFAULT 0,
+            FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE SET NULL
+        );
         CREATE INDEX IF NOT EXISTS idx_tasks_date ON tasks(task_date);
         CREATE INDEX IF NOT EXISTS idx_checks_date ON habit_checks(check_date);
+        CREATE INDEX IF NOT EXISTS idx_pomodoro_date ON pomodoro_sessions(session_date);
     """)
     conn.commit()
     conn.close()
@@ -152,6 +168,9 @@ def serve_js(filename):
 def health():
     return jsonify({"ok": True, "status": "healthy", "db": os.path.exists(DB_PATH)})
 
+@app.route("/weekly-plan")
+def weekly_plan_view():
+    return render_template("weekly_plan.html")
 
 # ---------- Overview ----------
 
@@ -600,7 +619,7 @@ def get_profile():
         ")"
     ).fetchone()[0]
 
-    profile["stats"] = {
+    profile["stats"] = { # type: ignore
         "tasks_done": tasks_done,
         "habits_count": habits_count,
         "best_streak": best_streak,
@@ -608,6 +627,20 @@ def get_profile():
     }
     return jsonify({"ok": True, "profile": profile})
 
+@app.route("/api/pomodoro/sessions", methods=["GET"])
+def pomodoro_list_sessions():
+    date_param = request.args.get("date")
+    d = parse_iso_date(date_param) if date_param else date.today()
+    if d is None:
+        return err("Invalid date.")
+    db = get_db()
+    rows = db.execute(
+        "SELECT * FROM pomodoro_sessions "
+        "WHERE session_date = ? AND completed = 1 "
+        "ORDER BY started_at DESC",
+        (d.isoformat(),),
+    ).fetchall()
+    return jsonify({"ok": True, "sessions": [dict(r) for r in rows]})
 
 @app.route("/api/profile", methods=["PUT"])
 def save_profile():
@@ -977,6 +1010,174 @@ def _build_report_html(end_date):
 </body>
 </html>"""
 
+#----------- Weekly Planer ----------
+
+@app.route("/api/weekly-plan", methods=["GET"])
+def get_weekly_plan():
+    date_param = request.args.get("date")
+    selected = parse_iso_date(date_param) if date_param else date.today()
+    if selected is None:
+        return err("Invalid date.")
+
+    monday, sunday = week_bounds(selected)
+    db = get_db()
+
+    row = db.execute(
+        "SELECT content FROM weekly_plans WHERE week_start = ?",
+        (monday.isoformat(),),
+    ).fetchone()
+
+    tasks = db.execute(
+        "SELECT * FROM tasks WHERE task_date BETWEEN ? AND ? "
+        "ORDER BY task_date ASC, "
+        "CASE WHEN start_time = '' THEN 1 ELSE 0 END, "
+        "start_time ASC, created_at ASC",
+        (monday.isoformat(), sunday.isoformat()),
+    ).fetchall()
+
+    tasks_list = [dict(t) for t in tasks]
+    total = len(tasks_list)
+    done = sum(1 for t in tasks_list if t["done"])
+
+    return jsonify({
+        "ok": True,
+        "week_start": monday.isoformat(),
+        "week_end": sunday.isoformat(),
+        "today": date.today().isoformat(),
+        "content": row["content"] if row else "",
+        "tasks": tasks_list,
+        "stats": {
+            "total": total,
+            "completed": done,
+            "percent": round(done / total * 100) if total else 0,
+        },
+    })
+
+
+@app.route("/api/weekly-plan", methods=["PUT"])
+def save_weekly_plan():
+    data = request.get_json(silent=True) or {}
+    d = parse_iso_date(data.get("date"))
+    if d is None:
+        return err("Valid date required.")
+
+    monday, _ = week_bounds(d)
+    content = data.get("content", "")
+    if not isinstance(content, str):
+        return err("Content must be a string.")
+    if len(content) > 20000:
+        return err("Plan is too long (max 20000 characters).")
+
+    db = get_db()
+    db.execute(
+        "INSERT INTO weekly_plans (week_start, content, updated_at) VALUES (?, ?, ?) "
+        "ON CONFLICT(week_start) DO UPDATE SET "
+        "content=excluded.content, updated_at=excluded.updated_at",
+        (monday.isoformat(), content, datetime.utcnow().isoformat()),
+    )
+    db.commit()
+    return jsonify({"ok": True})
+
+#---------- Calender Month View ---------
+
+@app.route("/calendar")
+def calendar_view():
+    return render_template("calendar.html")
+
+
+@app.route("/api/tasks/month")
+def tasks_month():
+    month_param = request.args.get("month")
+    if month_param and re.match(r"^\d{4}-\d{2}$", month_param):
+        try:
+            y, m = map(int, month_param.split("-"))
+            anchor = date(y, m, 1)
+        except ValueError:
+            return err("Invalid month.")
+    else:
+        anchor = date.today().replace(day=1)
+
+    first, last = month_bounds(anchor)
+    db = get_db()
+    tasks = db.execute(
+        "SELECT * FROM tasks WHERE task_date BETWEEN ? AND ? "
+        "ORDER BY task_date ASC, "
+        "CASE WHEN start_time = '' THEN 1 ELSE 0 END, "
+        "start_time ASC, created_at ASC",
+        (first.isoformat(), last.isoformat()),
+    ).fetchall()
+
+    return jsonify({
+        "ok": True,
+        "month": anchor.strftime("%Y-%m"),
+        "today": date.today().isoformat(),
+        "tasks": [dict(t) for t in tasks],
+    })
+
+#----------- Pomodoro ----------
+@app.route("/pomodoro")
+def pomodoro_view():
+    return render_template("pomodoro.html")
+
+
+@app.route("/api/pomodoro/stats")
+def pomodoro_stats():
+    date_param = request.args.get("date")
+    d = parse_iso_date(date_param) if date_param else date.today()
+    if d is None:
+        return err("Invalid date.")
+
+    db = get_db()
+    today_row = db.execute(
+        "SELECT COUNT(*) AS cnt, COALESCE(SUM(duration_sec), 0) AS total "
+        "FROM pomodoro_sessions WHERE session_date = ? AND completed = 1",
+        (d.isoformat(),),
+    ).fetchone()
+    all_row = db.execute(
+        "SELECT COUNT(*) AS cnt, COALESCE(SUM(duration_sec), 0) AS total "
+        "FROM pomodoro_sessions WHERE completed = 1"
+    ).fetchone()
+
+    return jsonify({
+        "ok": True,
+        "today": {"count": today_row["cnt"], "total_sec": today_row["total"]},
+        "all_time": {"count": all_row["cnt"], "total_sec": all_row["total"]},
+    })
+
+
+@app.route("/api/pomodoro/sessions", methods=["POST"])
+def pomodoro_add_session():
+    data = request.get_json(silent=True) or {}
+    duration = data.get("duration_sec")
+    if not isinstance(duration, int) or duration < 1 or duration > 7200:
+        return err("Invalid duration.")
+
+    d = parse_iso_date(data.get("date"))
+    if d is None:
+        return err("Valid date required.")
+
+    task_id = data.get("task_id")
+    if task_id is not None:
+        try:
+            task_id = int(task_id)
+        except (TypeError, ValueError):
+            task_id = None
+
+    db = get_db()
+    if task_id is not None:
+        exists = db.execute("SELECT id FROM tasks WHERE id = ?", (task_id,)).fetchone()
+        if not exists:
+            task_id = None
+
+    now = datetime.now().isoformat()
+    cur = db.execute(
+        "INSERT INTO pomodoro_sessions "
+        "(session_date, task_id, duration_sec, started_at, ended_at, completed) "
+        "VALUES (?, ?, ?, ?, ?, 1)",
+        (d.isoformat(), task_id, duration, now, now),
+    )
+    db.commit()
+    return jsonify({"ok": True, "id": cur.lastrowid})
 
 # ---------- Error handler ----------
 
