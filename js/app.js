@@ -12,6 +12,11 @@
     heatmapHabitId: null,
     heatmapCache: {},
     streakMap: {},
+    // --- Task Filter State ---
+    taskSearchQuery: "",
+    taskFilterCategory: "all",
+    taskFilterPriority: "all",
+    taskFilterStatus: "all",
   };
 
   const HABIT_COLORS = ["#718F78", "#D9A441", "#9B8BC4", "#C9758B", "#6E8FB5", "#8FA678", "#C47E5A"];
@@ -97,6 +102,24 @@
       b.classList.toggle("active", b.dataset.chart === t);
     });
     drawHabitChart();
+  }
+
+  // ---------- Date Change & Filter Reset ----------
+  function resetTaskFilters() {
+    state.taskSearchQuery = "";
+    state.taskFilterCategory = "all";
+    state.taskFilterPriority = "all";
+    state.taskFilterStatus = "all";
+    if ($("#task-search")) $("#task-search").value = "";
+    if ($("#clear-search")) $("#clear-search").classList.add("hidden");
+    if ($("#filter-priority")) $("#filter-priority").value = "all";
+    if ($("#filter-status")) $("#filter-status").value = "all";
+  }
+
+  function changeDate(iso) {
+    state.selectedDate = iso;
+    resetTaskFilters();
+    loadOverview();
   }
 
   // ---------- Loading ----------
@@ -226,9 +249,18 @@
         </div>
         ${preview}${more}
       `;
-      el.addEventListener("click", () => { state.selectedDate = iso; loadOverview(); });
+      el.addEventListener("click", () => changeDate(iso));
       grid.appendChild(el);
     }
+  }
+
+  // Badge for recurring / recurring-instance tasks
+  function repeatBadge(t) {
+    const isTpl = t.recur && t.recur !== "none";
+    const isInstance = !!t.parent_id;
+    if (!isTpl && !isInstance) return "";
+    const label = isInstance ? "Part of recurring series" : `Repeats: ${t.recur}`;
+    return ` <svg class="recur-badge" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="${label}"><title>${label}</title><path d="M17 2l4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>`;
   }
 
   function renderTaskList() {
@@ -236,6 +268,46 @@
     const list = $("#task-list");
     $("#daily-subtitle").textContent = prettyDate(o.selected_date);
 
+    // 1. Update Category options dynamically
+    const catSelect = $("#filter-category");
+    const currentCatValue = state.taskFilterCategory;
+    const uniqueCats = new Set(o.tasks.map(t => t.category));
+    let optionsHtml = '<option value="all">All Categories</option>';
+    Array.from(uniqueCats).sort().forEach(c => {
+      optionsHtml += `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`;
+    });
+    
+    if (catSelect.innerHTML !== optionsHtml) {
+      catSelect.innerHTML = optionsHtml;
+    }
+    
+    if (uniqueCats.has(currentCatValue) || currentCatValue === "all") {
+      catSelect.value = currentCatValue;
+    } else {
+      state.taskFilterCategory = "all";
+      catSelect.value = "all";
+    }
+
+    // 2. Apply Filters
+    const filteredTasks = o.tasks.filter(t => {
+      if (state.taskSearchQuery) {
+        const q = state.taskSearchQuery;
+        if (!t.title.toLowerCase().includes(q) && !t.category.toLowerCase().includes(q)) {
+          return false;
+        }
+      }
+      if (state.taskFilterCategory !== "all" && t.category !== state.taskFilterCategory) {
+        return false;
+      }
+      if (state.taskFilterPriority !== "all" && t.priority !== state.taskFilterPriority) {
+        return false;
+      }
+      if (state.taskFilterStatus === "active" && t.done) return false;
+      if (state.taskFilterStatus === "completed" && !t.done) return false;
+      return true;
+    });
+
+    // 3. Empty States
     if (!o.tasks.length) {
       list.innerHTML = `
         <div class="empty-state">
@@ -244,14 +316,25 @@
         </div>`;
       return;
     }
+
+    if (!filteredTasks.length) {
+      list.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-title">No matching tasks.</div>
+          <div class="empty-sub">Try changing your search or filters.</div>
+        </div>`;
+      return;
+    }
+
+    // 4. Render Filtered Tasks
     list.innerHTML = "";
-    o.tasks.forEach(t => {
+    filteredTasks.forEach(t => {
       const item = document.createElement("div");
       item.className = "task-item" + (t.done ? " done" : "");
       item.innerHTML = `
         <input type="checkbox" class="task-check" ${t.done ? "checked" : ""} />
         <div class="task-body">
-          <div class="task-title">${escapeHtml(t.title)}</div>
+          <div class="task-title">${escapeHtml(t.title)}${repeatBadge(t)}</div>
           <div class="task-meta">
             <span><span class="priority-dot priority-${t.priority}"></span>${escapeHtml(t.priority)}</span>
             <span>${escapeHtml(t.category)}</span>
@@ -278,7 +361,10 @@
       });
       item.querySelector('[data-action="edit"]').addEventListener("click", () => openTaskModal(t));
       item.querySelector('[data-action="delete"]').addEventListener("click", async () => {
-        if (!confirm(`Delete "${t.title}"?`)) return;
+        const confirmMsg = (t.recur && t.recur !== "none")
+          ? `Delete "${t.title}" and all its recurring instances?`
+          : `Delete "${t.title}"?`;
+        if (!confirm(confirmMsg)) return;
         try {
           await api(`/api/tasks/${t.id}`, { method: "DELETE" });
           toast("Task deleted");
@@ -728,12 +814,12 @@
     b.addEventListener("click", () => setView(b.dataset.view));
   });
 
-  $("#prev-day").addEventListener("click", () => { state.selectedDate = addDays(state.selectedDate, -1); loadOverview(); });
-  $("#next-day").addEventListener("click", () => { state.selectedDate = addDays(state.selectedDate, 1); loadOverview(); });
-  $("#today-btn").addEventListener("click", () => { state.selectedDate = todayIso(); loadOverview(); });
-  $("#prev-week").addEventListener("click", () => { state.selectedDate = addDays(state.selectedDate, -7); loadOverview(); });
-  $("#next-week").addEventListener("click", () => { state.selectedDate = addDays(state.selectedDate, 7); loadOverview(); });
-  $("#this-week").addEventListener("click", () => { state.selectedDate = todayIso(); loadOverview(); });
+  $("#prev-day").addEventListener("click", () => changeDate(addDays(state.selectedDate, -1)));
+  $("#next-day").addEventListener("click", () => changeDate(addDays(state.selectedDate, 1)));
+  $("#today-btn").addEventListener("click", () => changeDate(todayIso()));
+  $("#prev-week").addEventListener("click", () => changeDate(addDays(state.selectedDate, -7)));
+  $("#next-week").addEventListener("click", () => changeDate(addDays(state.selectedDate, 7)));
+  $("#this-week").addEventListener("click", () => changeDate(todayIso()));
 
   $("#prev-month").addEventListener("click", () => {
     const a = state.monthAnchor || new Date();
@@ -761,6 +847,35 @@
     b.addEventListener("click", () => setChartType(b.dataset.chart));
   });
 
+  // ---------- Search & Filter Listeners ----------
+  $("#task-search").addEventListener("input", e => {
+    state.taskSearchQuery = e.target.value.trim().toLowerCase();
+    $("#clear-search").classList.toggle("hidden", !state.taskSearchQuery);
+    renderTaskList();
+  });
+
+  $("#clear-search").addEventListener("click", () => {
+    $("#task-search").value = "";
+    state.taskSearchQuery = "";
+    $("#clear-search").classList.add("hidden");
+    renderTaskList();
+  });
+
+  $("#filter-category").addEventListener("change", e => {
+    state.taskFilterCategory = e.target.value;
+    renderTaskList();
+  });
+
+  $("#filter-priority").addEventListener("change", e => {
+    state.taskFilterPriority = e.target.value;
+    renderTaskList();
+  });
+
+  $("#filter-status").addEventListener("change", e => {
+    state.taskFilterStatus = e.target.value;
+    renderTaskList();
+  });
+
   // ---------- Mobile ----------
   function openMobileMenu() {
     $("#sidebar .nav").classList.add("open");
@@ -785,6 +900,10 @@
     $("#task-time").value = task ? (task.start_time || "") : "";
     $("#task-category").value = task ? task.category : "Personal";
     $("#task-priority").value = task ? task.priority : "medium";
+    const recur = task ? (task.recur || "none") : "none";
+    $("#task-recur").value = recur;
+    $("#task-recur-until").value = task ? (task.recur_until || "") : "";
+    $("#recur-until-row").style.display = recur === "none" ? "none" : "";
     $("#task-error").classList.add("hidden");
     $("#task-modal").classList.remove("hidden");
     setTimeout(() => $("#task-title").focus(), 50);
@@ -796,15 +915,23 @@
   $("#cancel-task").addEventListener("click", closeTaskModal);
   $("#task-modal").addEventListener("click", e => { if (e.target.id === "task-modal") closeTaskModal(); });
 
+  $("#task-recur").addEventListener("change", () => {
+    const v = $("#task-recur").value;
+    $("#recur-until-row").style.display = v === "none" ? "none" : "";
+  });
+
   $("#task-form").addEventListener("submit", async e => {
     e.preventDefault();
     const id = $("#task-id").value;
+    const recur = $("#task-recur").value || "none";
     const payload = {
       title: $("#task-title").value.trim(),
       task_date: $("#task-date").value,
       start_time: $("#task-time").value,
       category: $("#task-category").value.trim() || "Personal",
       priority: $("#task-priority").value,
+      recur: recur,
+      recur_until: recur === "none" ? "" : ($("#task-recur-until").value || ""),
     };
     const errEl = $("#task-error");
     const btn = $("#save-task-btn");

@@ -105,11 +105,13 @@
 
       const cell = document.createElement("div");
       cell.className = "cell";
+      cell.dataset.iso = iso;
       if (!inMonth) cell.classList.add("other-month");
       if (iso === state.today) cell.classList.add("today");
 
-      const countClass = dayTasks.length ? "" : "empty";
-      const countLabel = dayTasks.length ? dayTasks.length : "0";
+      // Hide badge if 0 tasks
+      const countLabel = dayTasks.length ? dayTasks.length : "";
+      const countHtml = countLabel !== "" ? `<span class="cell-count">${countLabel}</span>` : "";
 
       const shown = dayTasks.slice(0, 2);
       const tasksHtml = shown.map(t =>
@@ -122,7 +124,7 @@
       cell.innerHTML = `
         <div class="cell-top">
           <span class="cell-day">${d.getDate()}</span>
-          <span class="cell-count ${countClass}">${countLabel}</span>
+          ${countHtml}
         </div>
         ${tasksHtml}${moreHtml}
       `;
@@ -164,12 +166,7 @@
             await api(`/api/tasks/${t.id}`, { method: "PATCH", body: { done: e.target.checked } });
             t.done = e.target.checked ? 1 : 0;
             item.classList.toggle("done", e.target.checked);
-            // Update badge in the grid
-            const cellCount = document.querySelector(`.cell[data-iso="${iso}"] .cell-count`);
-            if (cellCount) {
-              const total = (state.tasksByDate[iso] || []).length;
-              cellCount.textContent = total;
-            }
+            // Badge doesn't need updating on toggle, as the total count of tasks doesn't change.
           } catch (err) {
             e.target.checked = !e.target.checked;
             toast(err.message, "error");

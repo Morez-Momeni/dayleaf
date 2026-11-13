@@ -45,7 +45,10 @@ def init_db():
             priority TEXT NOT NULL DEFAULT 'medium'
                 CHECK (priority IN ('low','medium','high')),
             done INTEGER NOT NULL DEFAULT 0,
-            created_at TEXT NOT NULL
+            created_at TEXT NOT NULL,
+            recur TEXT NOT NULL DEFAULT 'none',
+            recur_until TEXT NOT NULL DEFAULT '',
+            parent_id INTEGER
         );
         CREATE TABLE IF NOT EXISTS habits (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -93,6 +96,15 @@ def init_db():
         CREATE INDEX IF NOT EXISTS idx_checks_date ON habit_checks(check_date);
         CREATE INDEX IF NOT EXISTS idx_pomodoro_date ON pomodoro_sessions(session_date);
     """)
+
+    cols = {row[1] for row in conn.execute("PRAGMA table_info(tasks)").fetchall()}
+    if "recur" not in cols:
+        conn.execute("ALTER TABLE tasks ADD COLUMN recur TEXT NOT NULL DEFAULT 'none'")
+    if "recur_until" not in cols:
+        conn.execute("ALTER TABLE tasks ADD COLUMN recur_until TEXT NOT NULL DEFAULT ''")
+    if "parent_id" not in cols:
+        conn.execute("ALTER TABLE tasks ADD COLUMN parent_id INTEGER")
+
     conn.commit()
     conn.close()
 
@@ -168,9 +180,66 @@ def serve_js(filename):
 def health():
     return jsonify({"ok": True, "status": "healthy", "db": os.path.exists(DB_PATH)})
 
+
 @app.route("/weekly-plan")
 def weekly_plan_view():
     return render_template("weekly_plan.html")
+
+
+# ---------- Recurring tasks ----------
+
+RECUR_VALUES = {"none", "daily", "weekly", "weekdays"}
+
+
+def _recur_matches(recur, anchor_date, target_date):
+    if target_date < anchor_date:
+        return False
+    delta = (target_date - anchor_date).days
+    if recur == "daily":
+        return True
+    if recur == "weekly":
+        return delta % 7 == 0
+    if recur == "weekdays":
+        return target_date.weekday() < 5
+    return False
+
+
+def _ensure_recurring_for_date(db, target_date):
+    """Create instances of recurring task templates for target_date if missing."""
+    templates = db.execute(
+        "SELECT * FROM tasks WHERE recur != 'none' AND parent_id IS NULL "
+        "AND task_date <= ? AND (recur_until = '' OR recur_until >= ?)",
+        (target_date.isoformat(), target_date.isoformat()),
+    ).fetchall()
+
+    for tpl in templates:
+        anchor = datetime.strptime(tpl["task_date"], "%Y-%m-%d").date()
+        if not _recur_matches(tpl["recur"], anchor, target_date):
+            continue
+        if target_date == anchor:
+            continue
+        existing = db.execute(
+            "SELECT id FROM tasks WHERE parent_id = ? AND task_date = ?",
+            (tpl["id"], target_date.isoformat()),
+        ).fetchone()
+        if existing:
+            continue
+        db.execute(
+            "INSERT INTO tasks "
+            "(title, task_date, start_time, category, priority, done, created_at, recur, recur_until, parent_id) "
+            "VALUES (?, ?, ?, ?, ?, 0, ?, 'none', '', ?)",
+            (tpl["title"], target_date.isoformat(), tpl["start_time"],
+             tpl["category"], tpl["priority"], datetime.utcnow().isoformat(), tpl["id"]),
+        )
+    db.commit()
+
+
+def _ensure_recurring_for_range(db, start_date, end_date):
+    cur = start_date
+    while cur <= end_date:
+        _ensure_recurring_for_date(db, cur)
+        cur += timedelta(days=1)
+
 
 # ---------- Overview ----------
 
@@ -183,6 +252,7 @@ def api_overview():
 
     monday, sunday = week_bounds(selected)
     db = get_db()
+    _ensure_recurring_for_range(db, monday, sunday)
 
     tasks = db.execute(
         "SELECT * FROM tasks WHERE task_date = ? "
@@ -413,11 +483,28 @@ def create_task():
     if priority not in ALLOWED_PRIORITIES:
         return err("Invalid priority. Use low, medium, or high.")
 
+    recur = (data.get("recur") or "none").strip().lower()
+    if recur not in RECUR_VALUES:
+        return err("Invalid repeat value.")
+
+    recur_until = ""
+    if recur != "none":
+        raw = (data.get("recur_until") or "").strip()
+        if raw:
+            d = parse_iso_date(raw)
+            if d is None:
+                return err("Invalid repeat-until date.")
+            if d < task_date:
+                return err("Repeat-until date cannot be before the task date.")
+            recur_until = d.isoformat()
+
     db = get_db()
     cur = db.execute(
-        "INSERT INTO tasks (title, task_date, start_time, category, priority, done, created_at) "
-        "VALUES (?, ?, ?, ?, ?, 0, ?)",
-        (title, task_date.isoformat(), start_time, category, priority, datetime.utcnow().isoformat()),
+        "INSERT INTO tasks "
+        "(title, task_date, start_time, category, priority, done, created_at, recur, recur_until) "
+        "VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?)",
+        (title, task_date.isoformat(), start_time, category, priority,
+         datetime.utcnow().isoformat(), recur, recur_until),
     )
     db.commit()
     task = db.execute("SELECT * FROM tasks WHERE id = ?", (cur.lastrowid,)).fetchone()
@@ -438,6 +525,8 @@ def update_task(task_id):
     category = row["category"]
     priority = row["priority"]
     done = row["done"]
+    recur = row["recur"] or "none"
+    recur_until = row["recur_until"] or ""
 
     if "title" in data:
         title = (data.get("title") or "").strip()
@@ -466,11 +555,29 @@ def update_task(task_id):
         priority = p
     if "done" in data:
         done = 1 if data.get("done") else 0
+    if "recur" in data:
+        r = (data.get("recur") or "none").strip().lower()
+        if r not in RECUR_VALUES:
+            return err("Invalid repeat value.")
+        recur = r
+        if recur == "none":
+            recur_until = ""
+    if "recur_until" in data and recur != "none":
+        raw = (data.get("recur_until") or "").strip()
+        if raw:
+            d = parse_iso_date(raw)
+            if d is None:
+                return err("Invalid repeat-until date.")
+            if d < datetime.strptime(task_date, "%Y-%m-%d").date():
+                return err("Repeat-until cannot be before the task date.")
+            recur_until = d.isoformat()
+        else:
+            recur_until = ""
 
     db.execute(
-        "UPDATE tasks SET title=?, task_date=?, start_time=?, category=?, priority=?, done=? "
-        "WHERE id=?",
-        (title, task_date, start_time, category, priority, done, task_id),
+        "UPDATE tasks SET title=?, task_date=?, start_time=?, category=?, priority=?, done=?, "
+        "recur=?, recur_until=? WHERE id=?",
+        (title, task_date, start_time, category, priority, done, recur, recur_until, task_id),
     )
     db.commit()
     updated = db.execute("SELECT * FROM tasks WHERE id = ?", (task_id,)).fetchone()
@@ -483,6 +590,7 @@ def delete_task(task_id):
     row = db.execute("SELECT id FROM tasks WHERE id = ?", (task_id,)).fetchone()
     if row is None:
         return err("Task not found.", 404)
+    db.execute("DELETE FROM tasks WHERE parent_id = ?", (task_id,))
     db.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
     db.commit()
     return jsonify({"ok": True})
@@ -619,13 +727,14 @@ def get_profile():
         ")"
     ).fetchone()[0]
 
-    profile["stats"] = { # type: ignore
+    profile["stats"] = {  # type: ignore
         "tasks_done": tasks_done,
         "habits_count": habits_count,
         "best_streak": best_streak,
         "days_tracked": days_tracked,
     }
     return jsonify({"ok": True, "profile": profile})
+
 
 @app.route("/api/pomodoro/sessions", methods=["GET"])
 def pomodoro_list_sessions():
@@ -641,6 +750,7 @@ def pomodoro_list_sessions():
         (d.isoformat(),),
     ).fetchall()
     return jsonify({"ok": True, "sessions": [dict(r) for r in rows]})
+
 
 @app.route("/api/profile", methods=["PUT"])
 def save_profile():
@@ -661,7 +771,7 @@ def save_profile():
     if avatar:
         if not isinstance(avatar, str) or not avatar.startswith("data:image/"):
             return err("Invalid avatar format.")
-        if len(avatar) >  2_000_000:
+        if len(avatar) > 2_000_000:
             return err("Avatar is too large.")
 
     db = get_db()
@@ -1010,7 +1120,8 @@ def _build_report_html(end_date):
 </body>
 </html>"""
 
-#----------- Weekly Planer ----------
+
+# ---------- Weekly Planner ----------
 
 @app.route("/api/weekly-plan", methods=["GET"])
 def get_weekly_plan():
@@ -1021,6 +1132,7 @@ def get_weekly_plan():
 
     monday, sunday = week_bounds(selected)
     db = get_db()
+    _ensure_recurring_for_range(db, monday, sunday)
 
     row = db.execute(
         "SELECT content FROM weekly_plans WHERE week_start = ?",
@@ -1078,7 +1190,8 @@ def save_weekly_plan():
     db.commit()
     return jsonify({"ok": True})
 
-#---------- Calender Month View ---------
+
+# ---------- Calendar Month View ----------
 
 @app.route("/calendar")
 def calendar_view():
@@ -1099,6 +1212,8 @@ def tasks_month():
 
     first, last = month_bounds(anchor)
     db = get_db()
+    _ensure_recurring_for_range(db, first, last)
+
     tasks = db.execute(
         "SELECT * FROM tasks WHERE task_date BETWEEN ? AND ? "
         "ORDER BY task_date ASC, "
@@ -1114,7 +1229,9 @@ def tasks_month():
         "tasks": [dict(t) for t in tasks],
     })
 
-#----------- Pomodoro ----------
+
+# ---------- Pomodoro ----------
+
 @app.route("/pomodoro")
 def pomodoro_view():
     return render_template("pomodoro.html")
@@ -1178,6 +1295,7 @@ def pomodoro_add_session():
     )
     db.commit()
     return jsonify({"ok": True, "id": cur.lastrowid})
+
 
 # ---------- Error handler ----------
 
