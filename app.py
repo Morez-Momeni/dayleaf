@@ -48,7 +48,8 @@ def init_db():
             created_at TEXT NOT NULL,
             recur TEXT NOT NULL DEFAULT 'none',
             recur_until TEXT NOT NULL DEFAULT '',
-            parent_id INTEGER
+            parent_id INTEGER,
+            energy_cost TEXT NOT NULL DEFAULT 'medium'
         );
         CREATE TABLE IF NOT EXISTS habits (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -92,11 +93,16 @@ def init_db():
             completed INTEGER NOT NULL DEFAULT 0,
             FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE SET NULL
         );
+        CREATE TABLE IF NOT EXISTS daily_energy (
+            energy_date TEXT PRIMARY KEY,
+            level INTEGER NOT NULL DEFAULT 3
+        );
         CREATE INDEX IF NOT EXISTS idx_tasks_date ON tasks(task_date);
         CREATE INDEX IF NOT EXISTS idx_checks_date ON habit_checks(check_date);
         CREATE INDEX IF NOT EXISTS idx_pomodoro_date ON pomodoro_sessions(session_date);
     """)
 
+    # Migration for existing databases
     cols = {row[1] for row in conn.execute("PRAGMA table_info(tasks)").fetchall()}
     if "recur" not in cols:
         conn.execute("ALTER TABLE tasks ADD COLUMN recur TEXT NOT NULL DEFAULT 'none'")
@@ -104,6 +110,8 @@ def init_db():
         conn.execute("ALTER TABLE tasks ADD COLUMN recur_until TEXT NOT NULL DEFAULT ''")
     if "parent_id" not in cols:
         conn.execute("ALTER TABLE tasks ADD COLUMN parent_id INTEGER")
+    if "energy_cost" not in cols:
+        conn.execute("ALTER TABLE tasks ADD COLUMN energy_cost TEXT NOT NULL DEFAULT 'medium'")
 
     conn.commit()
     conn.close()
@@ -116,6 +124,7 @@ TIME_RE = re.compile(r"^\d{2}:\d{2}$")
 COLOR_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 ALLOWED_PRIORITIES = {"low", "medium", "high"}
+ALLOWED_ENERGY = {"low", "medium", "high"}
 
 
 def parse_iso_date(value):
@@ -226,10 +235,10 @@ def _ensure_recurring_for_date(db, target_date):
             continue
         db.execute(
             "INSERT INTO tasks "
-            "(title, task_date, start_time, category, priority, done, created_at, recur, recur_until, parent_id) "
-            "VALUES (?, ?, ?, ?, ?, 0, ?, 'none', '', ?)",
+            "(title, task_date, start_time, category, priority, done, created_at, recur, recur_until, parent_id, energy_cost) "
+            "VALUES (?, ?, ?, ?, ?, 0, ?, 'none', '', ?, ?)",
             (tpl["title"], target_date.isoformat(), tpl["start_time"],
-             tpl["category"], tpl["priority"], datetime.utcnow().isoformat(), tpl["id"]),
+             tpl["category"], tpl["priority"], datetime.utcnow().isoformat(), tpl["id"], tpl["energy_cost"]),
         )
     db.commit()
 
@@ -280,6 +289,10 @@ def api_overview():
     note_row = db.execute(
         "SELECT content FROM notes WHERE note_date = ?", (selected.isoformat(),)
     ).fetchone()
+    
+    energy_row = db.execute(
+        "SELECT level FROM daily_energy WHERE energy_date = ?", (selected.isoformat(),)
+    ).fetchone()
 
     tasks_list = [dict(t) for t in tasks]
     total_tasks = len(tasks_list)
@@ -321,6 +334,7 @@ def api_overview():
         "week_start": monday.isoformat(),
         "week_end": sunday.isoformat(),
         "today": date.today().isoformat(),
+        "energy": energy_row["level"] if energy_row else 3,
         "tasks": tasks_list,
         "week_tasks": [dict(t) for t in week_tasks],
         "habits": [dict(h) for h in habits],
@@ -330,6 +344,26 @@ def api_overview():
         "habit_stats": {"total": total_habits, "completed": done_habits, "percent": habit_pct},
         "chart": chart,
     })
+
+
+@app.route("/api/energy", methods=["PUT"])
+def save_energy():
+    data = request.get_json(silent=True) or {}
+    d = parse_iso_date(data.get("date"))
+    if d is None:
+        return err("Valid date required.")
+    level = data.get("level")
+    if not isinstance(level, int) or level < 1 or level > 5:
+        return err("Energy level must be 1-5.")
+
+    db = get_db()
+    db.execute(
+        "INSERT INTO daily_energy (energy_date, level) VALUES (?, ?) "
+        "ON CONFLICT(energy_date) DO UPDATE SET level=excluded.level",
+        (d.isoformat(), level),
+    )
+    db.commit()
+    return jsonify({"ok": True})
 
 
 # ---------- Habits: monthly matrix ----------
@@ -482,6 +516,10 @@ def create_task():
     priority = (data.get("priority") or "medium").strip().lower()
     if priority not in ALLOWED_PRIORITIES:
         return err("Invalid priority. Use low, medium, or high.")
+        
+    energy_cost = (data.get("energy_cost") or "medium").strip().lower()
+    if energy_cost not in ALLOWED_ENERGY:
+        return err("Invalid energy cost.")
 
     recur = (data.get("recur") or "none").strip().lower()
     if recur not in RECUR_VALUES:
@@ -501,10 +539,10 @@ def create_task():
     db = get_db()
     cur = db.execute(
         "INSERT INTO tasks "
-        "(title, task_date, start_time, category, priority, done, created_at, recur, recur_until) "
-        "VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?)",
+        "(title, task_date, start_time, category, priority, done, created_at, recur, recur_until, energy_cost) "
+        "VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?)",
         (title, task_date.isoformat(), start_time, category, priority,
-         datetime.utcnow().isoformat(), recur, recur_until),
+         datetime.utcnow().isoformat(), recur, recur_until, energy_cost),
     )
     db.commit()
     task = db.execute("SELECT * FROM tasks WHERE id = ?", (cur.lastrowid,)).fetchone()
@@ -527,6 +565,7 @@ def update_task(task_id):
     done = row["done"]
     recur = row["recur"] or "none"
     recur_until = row["recur_until"] or ""
+    energy_cost = row["energy_cost"] or "medium"
 
     if "title" in data:
         title = (data.get("title") or "").strip()
@@ -553,6 +592,11 @@ def update_task(task_id):
         if p not in ALLOWED_PRIORITIES:
             return err("Invalid priority.")
         priority = p
+    if "energy_cost" in data:
+        e = (data.get("energy_cost") or "").strip().lower()
+        if e not in ALLOWED_ENERGY:
+            return err("Invalid energy cost.")
+        energy_cost = e
     if "done" in data:
         done = 1 if data.get("done") else 0
     if "recur" in data:
@@ -576,8 +620,8 @@ def update_task(task_id):
 
     db.execute(
         "UPDATE tasks SET title=?, task_date=?, start_time=?, category=?, priority=?, done=?, "
-        "recur=?, recur_until=? WHERE id=?",
-        (title, task_date, start_time, category, priority, done, recur, recur_until, task_id),
+        "recur=?, recur_until=?, energy_cost=? WHERE id=?",
+        (title, task_date, start_time, category, priority, done, recur, recur_until, energy_cost, task_id),
     )
     db.commit()
     updated = db.execute("SELECT * FROM tasks WHERE id = ?", (task_id,)).fetchone()

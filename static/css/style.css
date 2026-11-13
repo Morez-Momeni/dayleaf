@@ -690,3 +690,115 @@ a.nav-item:visited {
     width: 100%;
   }
 }
+
+/* ============= Energy Section ============= */
+.energy-section {
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.energy-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.energy-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.energy-bars {
+  display: flex;
+  gap: 4px;
+}
+.energy-bar {
+  width: 20px;
+  height: 10px;
+  border-radius: 4px;
+  background: var(--muted-bg);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease;
+}
+.energy-bar:hover {
+  border-color: var(--green);
+}
+/* Level colors when active */
+.energy-bar.active[data-level="1"] { background: #C9758B; border-color: #C9758B; } /* Rose */
+.energy-bar.active[data-level="2"] { background: #D9A441; border-color: #D9A441; } /* Amber */
+.energy-bar.active[data-level="3"] { background: #8FA678; border-color: #8FA678; } /* Olive */
+.energy-bar.active[data-level="4"] { background: #718F78; border-color: #718F78; } /* Green */
+.energy-bar.active[data-level="5"] { background: #4E6C56; border-color: #4E6C56; } /* Dark Green */
+
+.energy-suggestion {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: var(--green-light);
+  color: var(--green-dark);
+  border-radius: 8px;
+  font-size: 13px;
+}
+.energy-suggestion strong {
+  font-weight: 700;
+}
+
+/* Task energy badge */
+.task-energy-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--muted-bg);
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.task-energy-badge.high { background: rgba(201, 117, 139, 0.1); color: #C9758B; }
+.task-energy-badge.medium { background: rgba(217, 164, 65, 0.1); color: #D9A441; }
+.task-energy-badge.low { background: rgba(143, 166, 120, 0.1); color: #8FA678; }
+.task-energy-badge.suggested {
+  outline: 1px solid var(--green);
+  background: var(--green-light);
+  color: var(--green-dark);
+}
+
+/* ============= Locked Tasks ============= */
+.task-item.locked {
+  opacity: 0.65;
+  background: var(--muted-bg);
+  border-style: dashed;
+  cursor: not-allowed;
+  position: relative;
+}
+.task-item.locked:hover {
+  background: var(--muted-bg);
+}
+.task-checkbox-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.task-item.locked .task-check {
+  cursor: not-allowed;
+}
+.lock-icon {
+  position: absolute;
+  color: var(--text);
+  pointer-events: none;
+}
+.locked-text {
+  color: #C9758B;
+  font-weight: 600;
+  font-size: 10px;
+  background: rgba(201, 117, 139, 0.1);
+  padding: 1px 6px;
+  border-radius: 4px;
+}

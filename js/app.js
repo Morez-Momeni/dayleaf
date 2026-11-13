@@ -12,11 +12,13 @@
     heatmapHabitId: null,
     heatmapCache: {},
     streakMap: {},
-    // --- Task Filter State ---
+    // Filters
     taskSearchQuery: "",
     taskFilterCategory: "all",
     taskFilterPriority: "all",
     taskFilterStatus: "all",
+    // Energy
+    currentEnergy: 3,
   };
 
   const HABIT_COLORS = ["#718F78", "#D9A441", "#9B8BC4", "#C9758B", "#6E8FB5", "#8FA678", "#C47E5A"];
@@ -127,6 +129,7 @@
     try {
       const data = await api(`/api/overview?date=${state.selectedDate}`);
       state.overview = data;
+      state.currentEnergy = data.energy || 3;
       renderAll();
     } catch (e) { toast(e.message, "error"); }
   }
@@ -254,7 +257,6 @@
     }
   }
 
-  // Badge for recurring / recurring-instance tasks
   function repeatBadge(t) {
     const isTpl = t.recur && t.recur !== "none";
     const isInstance = !!t.parent_id;
@@ -262,11 +264,27 @@
     const label = isInstance ? "Part of recurring series" : `Repeats: ${t.recur}`;
     return ` <svg class="recur-badge" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="${label}"><title>${label}</title><path d="M17 2l4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>`;
   }
+  
+  function energyBadge(t, isSuggested) {
+    const cost = t.energy_cost || "medium";
+    const label = cost.charAt(0).toUpperCase() + cost.slice(1);
+    const cls = `task-energy-badge ${cost} ${isSuggested ? 'suggested' : ''}`;
+    const title = isSuggested ? "Matches your current low energy" : "Energy required";
+    return `<span class="${cls}" title="${title}">${label}</span>`;
+  }
 
   function renderTaskList() {
     const o = state.overview;
     const list = $("#task-list");
     $("#daily-subtitle").textContent = prettyDate(o.selected_date);
+
+    // --- Energy Render ---
+    const isLowEnergy = state.currentEnergy <= 2;
+    document.querySelectorAll(".energy-bar").forEach(b => {
+      b.classList.toggle("active", Number(b.dataset.level) <= state.currentEnergy);
+    });
+    
+    $("#energy-suggestion").classList.toggle("hidden", !isLowEnergy);
 
     // 1. Update Category options dynamically
     const catSelect = $("#filter-category");
@@ -329,16 +347,28 @@
     // 4. Render Filtered Tasks
     list.innerHTML = "";
     filteredTasks.forEach(t => {
+      // 🚨 منطق جدید قفل کردن تسک‌های سخت
+      // اگر انرژی پایین (1 یا 2) باشد، و تسک سخت باشد، و انجام نشده باشد -> همیشه قفل می‌شود
+      const isLocked = isLowEnergy && t.energy_cost === 'high' && !t.done;
+      
+      const isSuggested = isLowEnergy && t.energy_cost === 'low' && !t.done;
+      
       const item = document.createElement("div");
-      item.className = "task-item" + (t.done ? " done" : "");
+      item.className = "task-item" + (t.done ? " done" : "") + (isLocked ? " locked" : "");
+      
       item.innerHTML = `
-        <input type="checkbox" class="task-check" ${t.done ? "checked" : ""} />
+        <div class="task-checkbox-wrapper">
+          <input type="checkbox" class="task-check" ${t.done ? "checked" : ""} ${isLocked ? "disabled" : ""} />
+          ${isLocked ? `<svg class="lock-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>` : ''}
+        </div>
         <div class="task-body">
           <div class="task-title">${escapeHtml(t.title)}${repeatBadge(t)}</div>
           <div class="task-meta">
             <span><span class="priority-dot priority-${t.priority}"></span>${escapeHtml(t.priority)}</span>
             <span>${escapeHtml(t.category)}</span>
             ${t.start_time ? `<span>${escapeHtml(t.start_time)}</span>` : ""}
+            ${energyBadge(t, isSuggested)}
+            ${isLocked ? `<span class="locked-text">Increase energy to unlock</span>` : ''}
           </div>
         </div>
         <div class="task-actions">
@@ -353,6 +383,7 @@
             </svg>
           </button>
         </div>`;
+      
       item.querySelector(".task-check").addEventListener("change", async e => {
         try {
           await api(`/api/tasks/${t.id}`, { method: "PATCH", body: { done: e.target.checked } });
@@ -847,6 +878,25 @@
     b.addEventListener("click", () => setChartType(b.dataset.chart));
   });
 
+  // ---------- Energy Bar Listeners ----------
+  document.querySelectorAll(".energy-bar").forEach(bar => {
+    bar.addEventListener("click", async () => {
+      const level = Number(bar.dataset.level);
+      if (level === state.currentEnergy) return;
+      
+      state.currentEnergy = level;
+      try {
+        await api("/api/energy", {
+          method: "PUT",
+          body: { date: state.selectedDate, level: level }
+        });
+        renderTaskList();
+      } catch (err) {
+        toast(err.message, "error");
+      }
+    });
+  });
+
   // ---------- Search & Filter Listeners ----------
   $("#task-search").addEventListener("input", e => {
     state.taskSearchQuery = e.target.value.trim().toLowerCase();
@@ -900,6 +950,7 @@
     $("#task-time").value = task ? (task.start_time || "") : "";
     $("#task-category").value = task ? task.category : "Personal";
     $("#task-priority").value = task ? task.priority : "medium";
+    $("#task-energy").value = task ? (task.energy_cost || "medium") : "medium";
     const recur = task ? (task.recur || "none") : "none";
     $("#task-recur").value = recur;
     $("#task-recur-until").value = task ? (task.recur_until || "") : "";
@@ -930,6 +981,7 @@
       start_time: $("#task-time").value,
       category: $("#task-category").value.trim() || "Personal",
       priority: $("#task-priority").value,
+      energy_cost: $("#task-energy").value,
       recur: recur,
       recur_until: recur === "none" ? "" : ($("#task-recur-until").value || ""),
     };
