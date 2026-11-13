@@ -1,17 +1,17 @@
 <p align="center">
-  <img src="https://capsule-render.vercel.app/api?type=waving&height=220&color=gradient&customColorList=6&text=Dayleaf&fontSize=58&fontColor=ffffff&animation=twinkling&fontAlignY=38&desc=Make%20space%20for%20what%20matters&descAlignY=58&descSize=16" width="100%" alt="Dayleaf banner" />
+<img src="https://capsule-render.vercel.app/api?type=waving&height=220&color=gradient&customColorList=6&text=Dayleaf&fontSize=58&fontColor=ffffff&animation=twinkling&fontAlignY=38&desc=Make%20space%20for%20what%20matters&descAlignY=58&descSize=16" width="100%" alt="Dayleaf banner" />
 </p>
 
 <p align="center">
-  A calm, locally hosted space for planning your days, building habits, and keeping track of your progress.
+A calm, locally hosted space for planning your days, building habits, and keeping track of your progress.
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Python-3.10%2B-718B70?style=flat-square&logo=python&logoColor=white" alt="Python 3.10+" />
-  <img src="https://img.shields.io/badge/Flask-Web%20App-718B70?style=flat-square&logo=flask&logoColor=white" alt="Flask" />
-  <img src="https://img.shields.io/badge/SQLite-Local%20Storage-718B70?style=flat-square&logo=sqlite&logoColor=white" alt="SQLite" />
-  <img src="https://img.shields.io/badge/Frontend-Vanilla%20JS-718B70?style=flat-square&logo=javascript&logoColor=white" alt="Vanilla JavaScript" />
-  <img src="https://img.shields.io/badge/Privacy-Local%20First-718B70?style=flat-square" alt="Local first" />
+<img src="https://img.shields.io/badge/Python-3.10%2B-718B70?style=flat-square&logo=python&logoColor=white" alt="Python 3.10+" />
+<img src="https://img.shields.io/badge/Flask-Web%20App-718B70?style=flat-square&logo=flask&logoColor=white" alt="Flask" />
+<img src="https://img.shields.io/badge/SQLite-Local%20Storage-718B70?style=flat-square&logo=sqlite&logoColor=white" alt="SQLite" />
+<img src="https://img.shields.io/badge/Frontend-Vanilla%20JS-718B70?style=flat-square&logo=javascript&logoColor=white" alt="Vanilla JavaScript" />
+<img src="https://img.shields.io/badge/Privacy-Local%20First-718B70?style=flat-square" alt="Local first" />
 </p>
 
 ---
@@ -22,7 +22,7 @@ Dayleaf is a personal productivity application designed to bring your daily plan
 
 Instead of relying on cloud services or external productivity platforms, Dayleaf runs locally on your own computer and opens directly in your browser. Your tasks, habit history, personal notes, and profile stay in a local SQLite database.
 
-Plan your day, explore your week, build consistent habits, and look back at your progress — all through a minimalist interface designed to feel comfortable rather than overwhelming.
+Plan your day, explore your week, build consistent habits, manage your mental energy, and look back at your progress — all through a minimalist interface designed to feel comfortable rather than overwhelming.
 
 **Your plans. Your progress. Your data.**
 
@@ -43,6 +43,9 @@ Keep your daily responsibilities organized without losing sight of what matters.
 - Sort scheduled tasks by time and unscheduled tasks by creation time.
 - Display completed tasks with muted text and strikethrough.
 - Receive helpful validation messages when task information is invalid.
+- **Search & Filters**: Quickly find tasks using the search bar and filter by Category, Priority, or Status.
+- **Recurring Tasks**: Set tasks to repeat every day, every week, or on weekdays only.
+- **Energy Costs**: Assign a mental energy cost (Low, Medium, High) to every task.
 
 Categories are not restricted to a predefined list. You can enter your own category while using suggestions such as Personal, Study, Work, Health, and Other.
 
@@ -66,6 +69,39 @@ See your plans from a wider perspective.
 - Handle month and year transitions automatically.
 
 The weekly planner connects your daily tasks with your broader schedule, making it easier to understand how your week is taking shape.
+
+### Energy-Aware Scheduling (The Energy Lock)
+
+Dayleaf understands that you are not a robot. It introduces a unique energy management system to prevent burnout and decision paralysis.
+
+- **Energy Scale**: Select your daily energy level from 1 (Drained) to 5 (Peak) in the Daily Planner.
+- **Smart Warnings**: If your energy is low, the app suggests tackling low-energy tasks first.
+- **Hard Locking**: If your energy drops to 1 or 2, Dayleaf automatically locks high-energy tasks (Deep Work). You cannot mark them as complete until your energy levels rise. Locked tasks appear with a dashed border and a lock icon.
+
+### Calendar Month View
+
+Zoom out and see your schedule at a glance.
+
+- A full-month calendar grid view of all tasks.
+- View task counts for each day.
+- Click any day to open a modal showing all tasks scheduled for that day and mark them complete.
+
+### Pomodoro Timer
+
+Track your deep work with an integrated focus timer.
+
+- Customizable focus and break durations.
+- Link focus sessions to specific tasks.
+- Beautiful, animated circular SVG timer.
+- Stores a session history and tracks total focus hours per day.
+
+### Weekly Plan
+
+A dedicated space to define your weekly achievements.
+
+- Write down your main goals or "achievements" for the current week.
+- Autosaves your thoughts automatically.
+- View a summary of how many tasks you have scheduled for the week and your completion progress.
 
 ### Habit Tracker
 
@@ -127,11 +163,13 @@ Explore your habit history through a GitHub-style contribution heatmap.
 
 Each heatmap includes a summary of:
 
-| Statistic | Description |
-|---|---|
-| Current streak | Consecutive completed days in the current streak |
-| Longest streak | The longest streak achieved for the selected habit |
-| Total completed days | Total days the habit has been completed |
+```
+| Statistic            | Description                                        |
+| -------------------- | -------------------------------------------------- |
+| Current streak       | Consecutive completed days in the current streak   |
+| Longest streak       | The longest streak achieved for the selected habit |
+| Total completed days | Total days the habit has been completed            |
+```
 
 The heatmap provides a visual history of your consistency rather than focusing only on daily checkboxes.
 
@@ -193,12 +231,14 @@ When no avatar is configured, Dayleaf displays the first letter of your name ins
 
 Your profile includes four summary cards.
 
-| Statistic | Description |
-|---|---|
-| Tasks Done | Total completed tasks across all time |
-| Active Habits | Number of habits currently tracked |
-| Best Streak | Longest streak achieved across all habits |
-| Days Tracked | Distinct days containing any activity |
+```
+| Statistic     | Description                               |
+| ------------- | ----------------------------------------- |
+| Tasks Done    | Total completed tasks across all time     |
+| Active Habits | Number of habits currently tracked        |
+| Best Streak   | Longest streak achieved across all habits |
+| Days Tracked  | Distinct days containing any activity     |
+```
 
 Activity includes tasks, habit checks, and notes.
 
@@ -227,16 +267,18 @@ The downloaded filename follows this format:
 
 #### Report Contents
 
-| Section | Information |
-|---|---|
-| Header | Dayleaf branding and report period |
-| Hero | Avatar, name, bio, and date range |
-| Summary | Tasks completed, total tasks, completion percentage, habit checks, best streak, and active days |
-| Notes | Number of notes written |
-| Weekly Activity | SVG bar chart covering the last eight weeks of combined activity |
-| Task Categories | Category-level completion progress bars |
-| Habits | Total completed days and longest streak for each habit |
-| Footer | Report generation timestamp |
+```
+| Section         | Information                                                                                     |
+| --------------- | ----------------------------------------------------------------------------------------------- |
+| Header          | Dayleaf branding and report period                                                              |
+| Hero            | Avatar, name, bio, and date range                                                               |
+| Summary         | Tasks completed, total tasks, completion percentage, habit checks, best streak, and active days |
+| Notes           | Number of notes written                                                                         |
+| Weekly Activity | SVG bar chart covering the last eight weeks of combined activity                                |
+| Task Categories | Category-level completion progress bars                                                         |
+| Habits          | Total completed days and longest streak for each habit                                          |
+| Footer          | Report generation timestamp                                                                     |
+```
 
 The report is responsive and handles HTML special characters safely.
 
@@ -282,11 +324,14 @@ Notifications automatically disappear after approximately 2.4 seconds.
 
 Move between the main sections without reloading the application.
 
-The sidebar contains three sections:
+The sidebar contains:
 
-- Planner
+- Planner (Daily & Weekly tasks)
 - Habit Tracker
 - Profile
+- Weekly Plan (Goals)
+- Calendar (Month View)
+- Pomodoro (Focus Timer)
 
 Navigation includes:
 
@@ -313,12 +358,14 @@ Dayleaf includes accessibility considerations throughout the interface.
 
 Dayleaf adapts to desktop, tablet, and mobile screens.
 
-| Screen | Layout |
-|---|---|
-| Desktop | Fixed 232px sidebar and main content area |
-| Tablet — 1000px and below | Summary cards use two columns, split grids stack, weekly planner displays four columns |
-| Mobile — 720px and below | Sidebar becomes a top bar with a hamburger menu, grids collapse to one column, weekly planner displays two columns |
-| Small phones — 480px and below | Reduced spacing, font sizes, and chart height |
+```
+| Screen                         | Layout                                                                                                             |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| Desktop                        | Fixed 232px sidebar and main content area                                                                          |
+| Tablet — 1000px and below      | Summary cards use two columns, split grids stack, weekly planner displays four columns                             |
+| Mobile — 720px and below       | Sidebar becomes a top bar with a hamburger menu, grids collapse to one column, weekly planner displays two columns |
+| Small phones — 480px and below | Reduced spacing, font sizes, and chart height                                                                      |
+```
 
 Additional responsive behavior:
 
@@ -333,16 +380,18 @@ Additional responsive behavior:
 
 Dayleaf uses a lightweight stack focused on local execution and straightforward maintenance.
 
-| Technology | Purpose |
-|---|---|
-| Python 3.10+ | Application backend |
-| Flask | Local web server and API |
-| SQLite | Persistent local database |
-| HTML5 | Application structure |
-| CSS3 | Styling, themes, and responsive layout |
-| Vanilla JavaScript | Frontend interaction |
-| Canvas 2D | Weekly activity chart |
-| SVG | Activity report chart |
+```
+| Technology         | Purpose                                |
+| ------------------ | -------------------------------------- |
+| Python 3.10+       | Application backend                    |
+| Flask              | Local web server and API               |
+| SQLite             | Persistent local database              |
+| HTML5              | Application structure                  |
+| CSS3               | Styling, themes, and responsive layout |
+| Vanilla JavaScript | Frontend interaction                   |
+| Canvas 2D          | Weekly activity chart                  |
+| SVG                | Activity report chart                  |
+```
 
 The application does not use React, frontend frameworks, bundlers, or external chart libraries.
 
@@ -510,15 +559,20 @@ Replacing application files does not require replacing your database.
 
 ### Database Structure
 
-Dayleaf uses five SQLite tables.
+Dayleaf uses the following SQLite tables.
 
-| Table | Purpose |
-|---|---|
-| `tasks` | Task details, dates, priorities, completion status, and creation timestamps |
-| `habits` | Habit names, colors, and creation timestamps |
-| `habit_checks` | Completion records for individual habits and dates |
-| `notes` | Daily notes and update timestamps |
-| `profile` | User profile information and avatar |
+```
+| Table               | Purpose                                                                     |
+| ------------------- | --------------------------------------------------------------------------- |
+| `tasks`             | Task details, dates, energy costs, recurrence, and completion status        |
+| `habits`            | Habit names, colors, and creation timestamps                                |
+| `habit_checks`      | Completion records for individual habits and dates                          |
+| `notes`             | Daily notes and update timestamps                                           |
+| `profile`           | User profile information and avatar                                         |
+| `weekly_plans`      | Weekly goals and achievements                                               |
+| `pomodoro_sessions` | Focus session durations and linked tasks                                    |
+| `daily_energy`      | Daily energy levels (1-5) for the Energy Lock feature                       |
+```
 
 #### Tasks
 
@@ -530,6 +584,8 @@ Stores:
 - Optional start time
 - Category
 - Priority
+- Energy cost (Low / Medium / High)
+- Recurrence settings
 - Completion status
 - Creation timestamp
 
@@ -631,10 +687,12 @@ This allows the application to be accessed from other devices connected to the s
 
 When Dayleaf starts, the terminal displays two addresses.
 
-| Address | Purpose |
-|---|---|
-| `http://127.0.0.1:5000` | Access from the computer running Dayleaf |
+```
+| Address                  | Purpose                                        |
+| ------------------------ | ---------------------------------------------- |
+| `http://127.0.0.1:5000`  | Access from the computer running Dayleaf       |
 | `http://<local-ip>:5000` | Access from another device on the same network |
+```
 
 For example:
 
@@ -700,66 +758,107 @@ The following endpoints are available.
 
 ### Application
 
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/` | Serves the main application |
-| GET | `/js/<filename>` | Serves JavaScript files from the `js/` directory |
-| GET | `/api/health` | Returns application and database health status |
+```
+| Method | Endpoint         | Description                                      |
+| ------ | ---------------- | ------------------------------------------------ |
+| GET    | `/`              | Serves the main application                      |
+| GET    | `/js/<filename>` | Serves JavaScript files from the `js/` directory |
+| GET    | `/api/health`    | Returns application and database health status   |
+```
 
 The health endpoint returns:
 
 ```json
 {
-  "ok": true,
-  "status": "healthy",
-  "db": true
+"ok": true,
+"status": "healthy",
+"db": true
 }
 ```
 
 ### Overview
 
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/api/overview?date=YYYY-MM-DD` | Returns selected date, week bounds, tasks, weekly tasks, habits, habit matrix, notes, task statistics, habit statistics, and chart data |
+```
+| Method | Endpoint                        | Description                                                                                                                             |
+| ------ | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/api/overview?date=YYYY-MM-DD` | Returns selected date, week bounds, tasks, weekly tasks, habits, habit matrix, notes, task statistics, habit statistics, and chart data |
+```
 
 ### Tasks
 
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/api/tasks` | Create a task |
-| PATCH | `/api/tasks/<id>` | Update a task |
+```
+| Method | Endpoint          | Description   |
+| ------ | ----------------- | ------------- |
+| POST   | `/api/tasks`      | Create a task |
+| PATCH  | `/api/tasks/<id>` | Update a task |
 | DELETE | `/api/tasks/<id>` | Delete a task |
+| GET    | `/api/tasks/month`| Retrieve tasks for calendar |
+```
 
 ### Habits
 
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/api/habits` | Create a habit |
-| DELETE | `/api/habits/<id>` | Delete a habit and its associated history |
-| PATCH | `/api/habits/<id>/check` | Check or uncheck a habit for a specific date |
-| GET | `/api/habits/month?month=YYYY-MM` | Retrieve monthly matrix data |
-| GET | `/api/habits/<id>/heatmap` | Retrieve yearly heatmap data |
-| GET | `/api/habits/<id>/streak` | Retrieve current streak, longest streak, and total completed days |
+```
+| Method | Endpoint                          | Description                                                       |
+| ------ | --------------------------------- | ----------------------------------------------------------------- |
+| POST   | `/api/habits`                     | Create a habit                                                    |
+| DELETE | `/api/habits/<id>`                | Delete a habit and its associated history                         |
+| PATCH  | `/api/habits/<id>/check`          | Check or uncheck a habit for a specific date                      |
+| GET    | `/api/habits/month?month=YYYY-MM` | Retrieve monthly matrix data                                      |
+| GET    | `/api/habits/<id>/heatmap`        | Retrieve yearly heatmap data                                      |
+| GET    | `/api/habits/<id>/streak`         | Retrieve current streak, longest streak, and total completed days |
+```
 
 ### Notes
 
-| Method | Endpoint | Description |
-|---|---|---|
-| PUT | `/api/notes` | Save a note for a specific date |
+```
+| Method | Endpoint     | Description                     |
+| ------ | ------------ | ------------------------------- |
+| PUT    | `/api/notes` | Save a note for a specific date |
+```
 
 ### Profile
 
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/api/profile` | Retrieve profile information and statistics |
-| PUT | `/api/profile` | Save profile information |
+```
+| Method | Endpoint       | Description                                 |
+| ------ | -------------- | ------------------------------------------- |
+| GET    | `/api/profile` | Retrieve profile information and statistics |
+| PUT    | `/api/profile` | Save profile information                    |
+```
+
+### Energy
+
+```
+| Method | Endpoint       | Description                    |
+| ------ | -------------- | ------------------------------ |
+| PUT    | `/api/energy`  | Save daily energy level        |
+```
+
+### Weekly Plan
+
+```
+| Method | Endpoint            | Description                  |
+| ------ | ------------------- | ---------------------------- |
+| GET    | `/api/weekly-plan`  | Retrieve weekly plan         |
+| PUT    | `/api/weekly-plan`  | Save weekly plan             |
+```
+
+### Pomodoro
+
+```
+| Method | Endpoint                   | Description                          |
+| ------ | -------------------------- | ------------------------------------ |
+| GET    | `/api/pomodoro/stats`      | Retrieve Pomodoro statistics         |
+| POST   | `/api/pomodoro/sessions`   | Create a new Pomodoro session        |
+```
 
 ### Activity Report
 
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/report?end=YYYY-MM-DD&download=1` | Generate and download the HTML activity report |
-| GET | `/report?end=YYYY-MM-DD` | Render the activity report for browser preview |
+```
+| Method | Endpoint                            | Description                                    |
+| ------ | ----------------------------------- | ---------------------------------------------- |
+| GET    | `/report?end=YYYY-MM-DD&download=1` | Generate and download the HTML activity report |
+| GET    | `/report?end=YYYY-MM-DD`            | Render the activity report for browser preview |
+```
 
 ---
 
@@ -777,13 +876,19 @@ dayleaf/
 ├── start_windows.bat
 ├── start_unix.sh
 ├── templates/
-│   └── index.html
+│   ├── index.html
+│   ├── calendar.html
+│   ├── pomodoro.html
+│   └── weekly_plan.html
 ├── static/
 │   └── css/
 │       └── style.css
 └── js/
     ├── app.js
-    └── profile.js
+    ├── profile.js
+    ├── calendar.js
+    ├── pomodoro.js
+    └── weekly_plan.js
 ```
 
 ---
@@ -841,9 +946,9 @@ A healthy response should include:
 
 ```json
 {
-  "ok": true,
-  "status": "healthy",
-  "db": true
+"ok": true,
+"status": "healthy",
+"db": true
 }
 ```
 
@@ -879,9 +984,9 @@ sudo ufw allow 5000/tcp
 
 
 <p align="center">
-  <img src="https://capsule-render.vercel.app/api?type=waving&height=150&color=gradient&customColorList=6&animation=twinkling&section=footer" width="100%" alt="Dayleaf footer" />
+<img src="https://capsule-render.vercel.app/api?type=waving&height=150&color=gradient&customColorList=6&animation=twinkling&section=footer" width="100%" alt="Dayleaf footer" />
 </p>
 
 <p align="center">
-  <sub>Make space for what matters.</sub>
+<sub>Make space for what matters.</sub>
 </p>
