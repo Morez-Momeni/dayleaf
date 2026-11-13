@@ -163,13 +163,11 @@ Explore your habit history through a GitHub-style contribution heatmap.
 
 Each heatmap includes a summary of:
 
-```
 | Statistic            | Description                                        |
 | -------------------- | -------------------------------------------------- |
 | Current streak       | Consecutive completed days in the current streak   |
 | Longest streak       | The longest streak achieved for the selected habit |
 | Total completed days | Total days the habit has been completed            |
-```
 
 The heatmap provides a visual history of your consistency rather than focusing only on daily checkboxes.
 
@@ -231,14 +229,12 @@ When no avatar is configured, Dayleaf displays the first letter of your name ins
 
 Your profile includes four summary cards.
 
-```
 | Statistic     | Description                               |
 | ------------- | ----------------------------------------- |
 | Tasks Done    | Total completed tasks across all time     |
 | Active Habits | Number of habits currently tracked        |
 | Best Streak   | Longest streak achieved across all habits |
 | Days Tracked  | Distinct days containing any activity     |
-```
 
 Activity includes tasks, habit checks, and notes.
 
@@ -267,7 +263,6 @@ The downloaded filename follows this format:
 
 #### Report Contents
 
-```
 | Section         | Information                                                                                     |
 | --------------- | ----------------------------------------------------------------------------------------------- |
 | Header          | Dayleaf branding and report period                                                              |
@@ -278,7 +273,6 @@ The downloaded filename follows this format:
 | Task Categories | Category-level completion progress bars                                                         |
 | Habits          | Total completed days and longest streak for each habit                                          |
 | Footer          | Report generation timestamp                                                                     |
-```
 
 The report is responsive and handles HTML special characters safely.
 
@@ -358,14 +352,12 @@ Dayleaf includes accessibility considerations throughout the interface.
 
 Dayleaf adapts to desktop, tablet, and mobile screens.
 
-```
 | Screen                         | Layout                                                                                                             |
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
 | Desktop                        | Fixed 232px sidebar and main content area                                                                          |
 | Tablet — 1000px and below      | Summary cards use two columns, split grids stack, weekly planner displays four columns                             |
 | Mobile — 720px and below       | Sidebar becomes a top bar with a hamburger menu, grids collapse to one column, weekly planner displays two columns |
 | Small phones — 480px and below | Reduced spacing, font sizes, and chart height                                                                      |
-```
 
 Additional responsive behavior:
 
@@ -380,7 +372,6 @@ Additional responsive behavior:
 
 Dayleaf uses a lightweight stack focused on local execution and straightforward maintenance.
 
-```
 | Technology         | Purpose                                |
 | ------------------ | -------------------------------------- |
 | Python 3.10+       | Application backend                    |
@@ -391,7 +382,6 @@ Dayleaf uses a lightweight stack focused on local execution and straightforward 
 | Vanilla JavaScript | Frontend interaction                   |
 | Canvas 2D          | Weekly activity chart                  |
 | SVG                | Activity report chart                  |
-```
 
 The application does not use React, frontend frameworks, bundlers, or external chart libraries.
 
@@ -561,7 +551,6 @@ Replacing application files does not require replacing your database.
 
 Dayleaf uses the following SQLite tables.
 
-```
 | Table               | Purpose                                                                     |
 | ------------------- | --------------------------------------------------------------------------- |
 | `tasks`             | Task details, dates, energy costs, recurrence, and completion status        |
@@ -572,7 +561,6 @@ Dayleaf uses the following SQLite tables.
 | `weekly_plans`      | Weekly goals and achievements                                               |
 | `pomodoro_sessions` | Focus session durations and linked tasks                                    |
 | `daily_energy`      | Daily energy levels (1-5) for the Energy Lock feature                       |
-```
 
 #### Tasks
 
@@ -687,12 +675,10 @@ This allows the application to be accessed from other devices connected to the s
 
 When Dayleaf starts, the terminal displays two addresses.
 
-```
 | Address                  | Purpose                                        |
 | ------------------------ | ---------------------------------------------- |
 | `http://127.0.0.1:5000`  | Access from the computer running Dayleaf       |
 | `http://<local-ip>:5000` | Access from another device on the same network |
-```
 
 For example:
 
@@ -758,13 +744,11 @@ The following endpoints are available.
 
 ### Application
 
-```
 | Method | Endpoint         | Description                                      |
 | ------ | ---------------- | ------------------------------------------------ |
 | GET    | `/`              | Serves the main application                      |
 | GET    | `/js/<filename>` | Serves JavaScript files from the `js/` directory |
 | GET    | `/api/health`    | Returns application and database health status   |
-```
 
 The health endpoint returns:
 
@@ -778,26 +762,21 @@ The health endpoint returns:
 
 ### Overview
 
-```
 | Method | Endpoint                        | Description                                                                                                                             |
 | ------ | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | GET    | `/api/overview?date=YYYY-MM-DD` | Returns selected date, week bounds, tasks, weekly tasks, habits, habit matrix, notes, task statistics, habit statistics, and chart data |
-```
 
 ### Tasks
 
-```
 | Method | Endpoint          | Description   |
 | ------ | ----------------- | ------------- |
 | POST   | `/api/tasks`      | Create a task |
 | PATCH  | `/api/tasks/<id>` | Update a task |
 | DELETE | `/api/tasks/<id>` | Delete a task |
 | GET    | `/api/tasks/month`| Retrieve tasks for calendar |
-```
 
 ### Habits
 
-```
 | Method | Endpoint                          | Description                                                       |
 | ------ | --------------------------------- | ----------------------------------------------------------------- |
 | POST   | `/api/habits`                     | Create a habit                                                    |
@@ -806,59 +785,58 @@ The health endpoint returns:
 | GET    | `/api/habits/month?month=YYYY-MM` | Retrieve monthly matrix data                                      |
 | GET    | `/api/habits/<id>/heatmap`        | Retrieve yearly heatmap data                                      |
 | GET    | `/api/habits/<id>/streak`         | Retrieve current streak, longest streak, and total completed days |
-```
 
 ### Notes
 
-```
+
 | Method | Endpoint     | Description                     |
 | ------ | ------------ | ------------------------------- |
 | PUT    | `/api/notes` | Save a note for a specific date |
-```
+
 
 ### Profile
 
-```
+
 | Method | Endpoint       | Description                                 |
 | ------ | -------------- | ------------------------------------------- |
 | GET    | `/api/profile` | Retrieve profile information and statistics |
 | PUT    | `/api/profile` | Save profile information                    |
-```
+
 
 ### Energy
 
-```
+
 | Method | Endpoint       | Description                    |
 | ------ | -------------- | ------------------------------ |
 | PUT    | `/api/energy`  | Save daily energy level        |
-```
+
 
 ### Weekly Plan
 
-```
+
 | Method | Endpoint            | Description                  |
 | ------ | ------------------- | ---------------------------- |
 | GET    | `/api/weekly-plan`  | Retrieve weekly plan         |
 | PUT    | `/api/weekly-plan`  | Save weekly plan             |
-```
+
 
 ### Pomodoro
 
-```
+
 | Method | Endpoint                   | Description                          |
 | ------ | -------------------------- | ------------------------------------ |
 | GET    | `/api/pomodoro/stats`      | Retrieve Pomodoro statistics         |
 | POST   | `/api/pomodoro/sessions`   | Create a new Pomodoro session        |
-```
+
 
 ### Activity Report
 
-```
+
 | Method | Endpoint                            | Description                                    |
 | ------ | ----------------------------------- | ---------------------------------------------- |
 | GET    | `/report?end=YYYY-MM-DD&download=1` | Generate and download the HTML activity report |
 | GET    | `/report?end=YYYY-MM-DD`            | Render the activity report for browser preview |
-```
+
 
 ---
 
