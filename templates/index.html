@@ -122,10 +122,18 @@
             <h1 class="page-title">Plan your week.</h1>
             <p class="page-subtitle">A little structure for a more intentional day.</p>
           </div>
-          <button class="btn btn-primary" id="open-task-modal" type="button">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-            Add Task
-          </button>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="btn btn-ghost" id="auto-plan-btn" type="button" title="Auto-schedule tasks based on your energy">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2l3 7 7 3-7 3-3 7-3-7-7-3 7-3 3-7z"/>
+              </svg>
+              Auto-Plan
+            </button>
+            <button class="btn btn-primary" id="open-task-modal" type="button">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+              Add Task
+            </button>
+          </div>
         </div>
 
         <div class="cards-grid cards-2">
@@ -583,8 +591,30 @@
     </div>
   </div>
 
+  <!-- AUTO-PLAN PREVIEW MODAL -->
+  <div class="modal-backdrop hidden" id="auto-plan-modal">
+    <div class="modal" role="dialog" aria-modal="true" style="max-width: 550px;">
+      <div class="modal-head">
+        <div>
+          <h3>Auto-Plan Preview</h3>
+          <p class="card-sub" style="margin-top:4px;">Review and adjust the proposed schedule.</p>
+        </div>
+        <button class="icon-btn" id="close-auto-plan" type="button" aria-label="Close">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="modal-body" id="auto-plan-list" style="padding: 16px; max-height: 400px; overflow-y: auto;">
+        <!-- Scheduled tasks will be injected here -->
+      </div>
+      <div class="modal-actions" style="padding: 16px 20px; border-top: 1px solid var(--border);">
+        <button type="button" class="btn btn-ghost" id="cancel-auto-plan">Cancel</button>
+        <button type="button" class="btn btn-primary" id="apply-auto-plan">Apply Schedule</button>
+      </div>
+    </div>
+  </div>
+
   <div id="toast-container" class="toast-container"></div>
-  <script src="/js/app.js?v=4"></script>
-  <script src="/js/profile.js?v=4"></script>
+  <script src="/js/app.js?v=7"></script>
+  <script src="/js/profile.js?v=7"></script>
 </body>
 </html>

@@ -1102,6 +1102,119 @@
     }
   });
 
+  // ==========================================
+  // NEW FEATURE: Smart Auto-Plan with Preview
+  // ==========================================
+  $("#auto-plan-btn").addEventListener("click", () => {
+    const o = state.overview;
+    if (!o || !o.tasks.length) {
+      toast("No tasks to schedule for today.", "error");
+      return;
+    }
+
+    const flexibleTasks = o.tasks.filter(t => !t.done && !t.start_time);
+    if (!flexibleTasks.length) {
+      toast("All tasks already have a time or are completed.", "info");
+      return;
+    }
+
+    const fixedTimes = o.tasks.filter(t => t.start_time).map(t => t.start_time);
+    
+    // Sort based on energy
+    flexibleTasks.sort((a, b) => {
+      const isLowEnergy = state.currentEnergy <= 2;
+      if (isLowEnergy) {
+        const energyScore = { low: 1, medium: 2, high: 3 };
+        return energyScore[a.energy_cost || 'medium'] - energyScore[b.energy_cost || 'medium'];
+      } else {
+        const priorityScore = { high: 1, medium: 2, low: 3 };
+        if (priorityScore[a.priority] !== priorityScore[b.priority]) {
+          return priorityScore[a.priority] - priorityScore[b.priority];
+        }
+        const energyScore = { high: 1, medium: 2, low: 3 };
+        return energyScore[a.energy_cost || 'medium'] - energyScore[b.energy_cost || 'medium'];
+      }
+    });
+
+    let currentHour = 9; // Start at 9 AM
+    let currentMin = 0;
+    const formatTime = (h, m) => `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    
+    const listContainer = $("#auto-plan-list");
+    listContainer.innerHTML = "";
+
+    // Generate the preview HTML
+    flexibleTasks.forEach(t => {
+      let timeStr = formatTime(currentHour, currentMin);
+      
+      // Skip already fixed times
+      while (fixedTimes.includes(timeStr)) {
+        currentHour++;
+        if (currentHour >= 24) currentHour = 0;
+        timeStr = formatTime(currentHour, currentMin);
+      }
+
+      const row = document.createElement("div");
+      row.className = "auto-plan-row";
+      row.style.cssText = "display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px dashed var(--border); gap: 16px; width: 100%; box-sizing: border-box;";
+      
+      row.innerHTML = `
+        <div style="flex: 1; min-width: 0; overflow: hidden;">
+          <div style="font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 4px;">${escapeHtml(t.title)}</div>
+          <div style="font-size: 11px; color: var(--muted); display: flex; gap: 12px; white-space: nowrap;">
+            <span>Energy: ${t.energy_cost.toUpperCase()}</span>
+            <span>Priority: ${t.priority.toUpperCase()}</span>
+          </div>
+        </div>
+        <input type="time" class="auto-plan-time-input preview-time-input" data-task-id="${t.id}" value="${timeStr}" required />
+      `;
+      listContainer.appendChild(row);
+
+      // Advance by 1 hour for the next task
+      currentHour++;
+      if (currentHour >= 24) currentHour = 0;
+    });
+
+    $("#auto-plan-modal").classList.remove("hidden");
+  });
+
+  // Close Auto-Plan Modal
+  $("#close-auto-plan").addEventListener("click", () => $("#auto-plan-modal").classList.add("hidden"));
+  $("#cancel-auto-plan").addEventListener("click", () => $("#auto-plan-modal").classList.add("hidden"));
+
+  // Apply Auto-Plan Schedule
+  $("#apply-auto-plan").addEventListener("click", async () => {
+    const inputs = document.querySelectorAll(".preview-time-input");
+    const updates = [];
+    
+    inputs.forEach(input => {
+      updates.push({
+        id: input.dataset.taskId,
+        time: input.value
+      });
+    });
+
+    const btn = $("#apply-auto-plan");
+    btn.disabled = true;
+    btn.textContent = "Applying...";
+
+    try {
+      await Promise.all(updates.map(u => 
+        api(`/api/tasks/${u.id}`, { method: "PATCH", body: { start_time: u.time } })
+      ));
+      
+      toast(`Successfully scheduled ${updates.length} tasks!`, "success");
+      $("#auto-plan-modal").classList.add("hidden");
+      await loadOverview();
+    } catch (err) {
+      toast("Failed to apply some tasks. Please try again.", "error");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Apply Schedule";
+    }
+  });
+  // ==========================================
+
   // ---------- Init ----------
   initTheme();
   state.chartType = loadChartType();
